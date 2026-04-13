@@ -1,0 +1,16 @@
+{
+    "name": "Shenanicode.Rollback",
+    "rootNamespace": "Shenanicode.Rollback",
+    "references": [
+        "FFS.StaticPack"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
