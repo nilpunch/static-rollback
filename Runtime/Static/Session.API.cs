@@ -52,8 +52,6 @@ namespace Shenanicode.Rollback {
 
 		public readonly int? MessageIdOffset;
 
-		public int RollbackTicksCapacity => (FramesCapacity!.Value - 1) * SaveEachNthTick!.Value;
-
 		public SessionConfig(int? tickRate = null, int? framesCapacity = null, int? saveEachNthTick = null, int? messageIdOffset = null) {
 			TickRate = tickRate;
 			SaveEachNthTick = saveEachNthTick;
@@ -309,13 +307,13 @@ namespace Shenanicode.Rollback {
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static AllInputs<T> GetAllInputs<T>() where T : unmanaged, IInput {
-			return GetAllInputsAt<T>(CurrentTick);
+		public static ref AllInputs<T> GetAllInputs<T>() where T : unmanaged, IInput {
+			return ref GetAllInputsAt<T>(CurrentTick);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static AllInputs<T> GetAllInputsAt<T>(int tick) where T : unmanaged, IInput {
-			return GetInputSet<T>().GetInputs(tick);
+		public static ref AllInputs<T> GetAllInputsAt<T>(int tick) where T : unmanaged, IInput {
+			return ref GetInputSet<T>().GetInputs(tick);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -359,13 +357,13 @@ namespace Shenanicode.Rollback {
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static AllSignals<T> GetAllSignals<T>() where T : struct, ISignal {
-			return GetAllSignalsAt<T>(CurrentTick);
+		public static ref AllSignals<T> GetAllSignals<T>() where T : struct, ISignal {
+			return ref GetAllSignalsAt<T>(CurrentTick);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static AllSignals<T> GetAllSignalsAt<T>(int tick) where T : struct, ISignal {
-			return GetSignalSet<T>().GetAllSignals(tick);
+		public static ref AllSignals<T> GetAllSignalsAt<T>(int tick) where T : struct, ISignal {
+			return ref GetSignalSet<T>().GetAllSignals(tick);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -386,8 +384,8 @@ namespace Shenanicode.Rollback {
 			}
 
 			Inputs<T>.Instance = new Inputs<T>(CurrentTick, Data.Instance.PredictionReceiver);
-			Inputs<T>.Handle = InputHandle.Create<TSessionType, T>();
-			Data.Instance.RegisterInputHandle(Inputs<T>.Handle);
+			Inputs<T>.Handle = InputHandle.Create<TSessionType, T>(Data.Instance.NextMessageId);
+			Data.Instance.RegisterInputHandle(ref Inputs<T>.Handle);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -398,8 +396,8 @@ namespace Shenanicode.Rollback {
 			}
 
 			Signals<T>.Instance = new Signals<T>(CurrentTick, Data.Instance.PredictionReceiver);
-			Signals<T>.Handle = SignalHandle.Create<TSessionType, T>();
-			Data.Instance.RegisterSignalHandle(Signals<T>.Handle);
+			Signals<T>.Handle = SignalHandle.Create<TSessionType, T>(Data.Instance.NextMessageId);
+			Data.Instance.RegisterSignalHandle(ref Signals<T>.Handle);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

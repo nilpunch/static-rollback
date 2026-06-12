@@ -190,17 +190,6 @@ namespace Shenanicode.Rollback {
 			}
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static int SaturationAdd(int a, int b) {
-			unchecked {
-				var result = a + b;
-				if (result < a) {
-					return int.MaxValue;
-				}
-				return result;
-			}
-		}
-
 		/// <summary>
 		/// Increments and wraps the value to 1 instead of 0 on overflow.
 		/// </summary>

@@ -39,7 +39,8 @@ namespace Shenanicode.Rollback {
 			private SignalHandle[] _signalHandles;
 			private int _inputHandlesCount;
 			private int _signalHandlesCount;
-			private int _nextMessageId;
+
+			public int NextMessageId;
 
 			public Data(SimulationType simulationType, SessionConfig config = default, IPredictionReceiver predictionReceiver = null) {
 				config = config.MergeWith(SessionConfig.Default);
@@ -72,7 +73,7 @@ namespace Shenanicode.Rollback {
 				_signalHandles = new SignalHandle[16];
 				_inputHandlesCount = 0;
 				_signalHandlesCount = 0;
-				_nextMessageId = MessageIdOffset;
+				NextMessageId = MessageIdOffset;
 			}
 
 			public void InitializeInternal() {
@@ -95,7 +96,7 @@ namespace Shenanicode.Rollback {
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public void RegisterInputHandle(InputHandle handle) {
+			public void RegisterInputHandle(ref InputHandle handle) {
 				if (InputHandles.ContainsKey(handle.InputType)) {
 					throw new InvalidOperationException($"Input type {handle.InputType.GetFullGenericName()} already registered.");
 				}
@@ -109,7 +110,7 @@ namespace Shenanicode.Rollback {
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public void RegisterSignalHandle(SignalHandle handle) {
+			public void RegisterSignalHandle(ref SignalHandle handle) {
 				if (SignalHandles.ContainsKey(handle.SignalType)) {
 					throw new InvalidOperationException($"Signal type {handle.SignalType.GetFullGenericName()} already registered.");
 				}
@@ -127,15 +128,15 @@ namespace Shenanicode.Rollback {
 					throw new InvalidOperationException($"Message type {type.GetFullGenericName()} already registered.");
 				}
 
-				EnsureMessageId(_nextMessageId);
-				if (_nextMessageId > short.MaxValue) {
+				EnsureMessageId(NextMessageId);
+				if (NextMessageId > short.MaxValue) {
 					throw new InvalidOperationException($"Message id overflow. Maximum supported id is {short.MaxValue}.");
 				}
-				_messageIdsByInputs.Add(type, _nextMessageId);
-				_messageTypes[_nextMessageId] = type;
-				_messageIsSignal[_nextMessageId] = false;
-				_messageIsAuthoritive[_nextMessageId] = type.IsDefined(typeof(AuthoritiveAttribute), false);
-				_nextMessageId++;
+				_messageIdsByInputs.Add(type, NextMessageId);
+				_messageTypes[NextMessageId] = type;
+				_messageIsSignal[NextMessageId] = false;
+				_messageIsAuthoritive[NextMessageId] = type.IsDefined(typeof(AuthoritiveAttribute), false);
+				NextMessageId++;
 			}
 
 			public void RegisterMessageSignal(Type type) {
@@ -143,37 +144,37 @@ namespace Shenanicode.Rollback {
 					throw new InvalidOperationException($"Message type {type.GetFullGenericName()} already registered.");
 				}
 
-				EnsureMessageId(_nextMessageId);
-				if (_nextMessageId > short.MaxValue) {
+				EnsureMessageId(NextMessageId);
+				if (NextMessageId > short.MaxValue) {
 					throw new InvalidOperationException($"Message id overflow. Maximum supported id is {short.MaxValue}.");
 				}
-				_messageIdsBySignals.Add(type, _nextMessageId);
-				_messageTypes[_nextMessageId] = type;
-				_messageIsSignal[_nextMessageId] = true;
-				_messageIsAuthoritive[_nextMessageId] = type.IsDefined(typeof(AuthoritiveAttribute), false);
-				_nextMessageId++;
+				_messageIdsBySignals.Add(type, NextMessageId);
+				_messageTypes[NextMessageId] = type;
+				_messageIsSignal[NextMessageId] = true;
+				_messageIsAuthoritive[NextMessageId] = type.IsDefined(typeof(AuthoritiveAttribute), false);
+				NextMessageId++;
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public readonly bool IsMessageIdRegistered(int messageId) {
-				return messageId >= MessageIdOffset && messageId < _nextMessageId;
+				return messageId >= MessageIdOffset && messageId < NextMessageId;
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public readonly bool IsSignalMessage(int messageId) {
-				EnsureRegisteredMessageId(messageId);
+				AssertRegisteredMessageId(messageId);
 				return _messageIsSignal[messageId];
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public readonly bool IsAuthoritiveMessage(int messageId) {
-				EnsureRegisteredMessageId(messageId);
+				AssertRegisteredMessageId(messageId);
 				return _messageIsAuthoritive[messageId];
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public readonly Type GetMessageType(int messageId) {
-				EnsureRegisteredMessageId(messageId);
+				AssertRegisteredMessageId(messageId);
 				return _messageTypes[messageId];
 			}
 
@@ -195,22 +196,20 @@ namespace Shenanicode.Rollback {
 				throw new InvalidOperationException($"Signal message type {type.GetFullGenericName()} is not registered.");
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			private void EnsureMessageId(int messageId) {
 				if (messageId < _messageTypes.Length) {
 					return;
 				}
 
-				var newSize = _messageTypes.Length << 1;
-				while (messageId >= newSize) {
-					newSize <<= 1;
-				}
+				var newSize = MathUtils.RoundUpToPowerOfTwo(messageId);
 
 				Array.Resize(ref _messageTypes, newSize);
 				Array.Resize(ref _messageIsSignal, newSize);
 				Array.Resize(ref _messageIsAuthoritive, newSize);
 			}
 
-			private readonly void EnsureRegisteredMessageId(int messageId) {
+			private readonly void AssertRegisteredMessageId(int messageId) {
 				if (!IsMessageIdRegistered(messageId)) {
 					throw new InvalidOperationException($"Message with id {messageId} is not registered.");
 				}

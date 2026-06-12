@@ -4,7 +4,7 @@ using Unity.IL2CPP.CompilerServices;
 namespace Shenanicode.Rollback {
 	[Il2CppSetOption(Option.NullChecks, false)]
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-	public struct FreshInputsEnumerator<T> where T : struct, IInput {
+	public struct FreshInputsEnumerator<T> where T : unmanaged, IInput {
 		private AllInputs<T> _allInputs;
 		private int _index;
 

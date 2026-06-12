@@ -41,10 +41,10 @@ namespace Shenanicode.Rollback {
 
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Signal<T> where T : ISignal {
-		public T Data;
 		public ushort Channel;
 		public byte LocalOrder;
 		public bool IsApproved;
+		public T Data;
 
 		public Signal(ushort channel, byte localOrder, T data, bool isApproved) {
 			Data = data;
@@ -53,6 +53,7 @@ namespace Shenanicode.Rollback {
 			IsApproved = isApproved;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Deconstruct(out ushort channel, out T data) {
 			data = Data;
 			channel = Channel;
@@ -69,10 +70,6 @@ namespace Shenanicode.Rollback {
 		public int SignalsCapacity;
 
 		public readonly bool HasAny => Count != 0;
-
-		public static AllSignals<T> Empty => new() {
-			Signals = Array.Empty<Signal<T>>()
-		};
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void EnsureInitialized(bool hasDispose) {
@@ -380,6 +377,7 @@ namespace Shenanicode.Rollback {
 				return clearedTicksCount;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public void PopulateUpTo(int tick) {
 				for (var i = _signalsBuffer.TailIndex; i <= tick; i++) {
 					ref var signals = ref _signalsBuffer.Append();
@@ -388,6 +386,7 @@ namespace Shenanicode.Rollback {
 				}
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public void DiscardUpTo(int tick) {
 				if (_hasDispose) {
 					var endTick = MathUtils.Min(tick, _signalsBuffer.TailIndex);
@@ -399,6 +398,7 @@ namespace Shenanicode.Rollback {
 				_signalsBuffer.RemoveUpTo(tick);
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public void HardReset(int startTick) {
 				if (_hasDispose) {
 					for (var i = _signalsBuffer.HeadIndex; i < _signalsBuffer.TailIndex; i++) {
@@ -409,6 +409,7 @@ namespace Shenanicode.Rollback {
 				_signalsBuffer.Reset(startTick);
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public ReadResult ReadApproved(int tick, byte localOrder, ushort channel, ref BinaryPackReader reader) {
 				PopulateUpTo(tick);
 
@@ -471,6 +472,7 @@ namespace Shenanicode.Rollback {
 				}
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public void Write(int tick, int index, ref BinaryPackWriter writer) {
 				if (_isUnmanagedPack) {
 					writer.Write(_signalsBuffer[tick].Signals[index].Data);
@@ -484,6 +486,7 @@ namespace Shenanicode.Rollback {
 				}
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public ReadResult Skip(ref BinaryPackReader reader) {
 				if (_isUnmanagedPack) {
 					if (!reader.HasNext(_sizeOfUnmanaged)) {
@@ -513,18 +516,22 @@ namespace Shenanicode.Rollback {
 				return ReadResult.Success;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public int GetSignalsCount(int tick) {
 				return _signalsBuffer[tick].DenseCount();
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public ushort GetSignalChannel(int tick, int index) {
 				return _signalsBuffer[tick].Signals[index].Channel;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public byte GetSignalLocalOrder(int tick, int index) {
 				return _signalsBuffer[tick].Signals[index].LocalOrder;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public int GetSignalIndex(int tick, ushort channel, byte localOrder) {
 				return _signalsBuffer[tick].GetIndex(channel, localOrder);
 			}

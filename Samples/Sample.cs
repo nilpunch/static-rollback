@@ -32,7 +32,7 @@ public class SimulationUpdateRoot : IUpdateRoot {
 		// ...
 
 		var input = S.GetInput<PlayerInput>(channel: 0);
-		if (input.LastFreshInput.Left) {
+		if (input.LastFresh().Left) {
 			// Move character to left.
 			// Scale movement based on input age.
 			var moveModifier = 1f - input.TicksPassed / 10f;

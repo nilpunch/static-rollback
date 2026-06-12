@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 
 namespace Shenanicode.Rollback {
-	public readonly struct FreshInputsEnumerable<T> where T : struct, IInput {
+	public readonly struct FreshInputsEnumerable<T> where T : unmanaged, IInput {
 		public readonly AllInputs<T> AllInputs;
 
 		public FreshInputsEnumerable(AllInputs<T> allInputs) {

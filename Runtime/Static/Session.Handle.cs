@@ -21,14 +21,14 @@ namespace Shenanicode.Rollback {
 		private readonly unsafe delegate*<int, MaskEnumerator> _getFreshInputs;
 
 		public readonly Type InputType;
-		public readonly Type SessionType;
+		public readonly int MessageId;
 
-		internal static unsafe InputHandle Create<TSessionType, TInput>()
+		internal static unsafe InputHandle Create<TSessionType, TInput>(int messageId)
 			where TSessionType : ISessionType
 			where TInput : unmanaged, IInput {
 			return new InputHandle(
 				typeof(TInput),
-				typeof(TSessionType),
+				messageId,
 				&Session<TSessionType>._InputClearPrediction<TInput>,
 				&Session<TSessionType>._InputPopulateUpTo<TInput>,
 				&Session<TSessionType>._InputDiscardUpTo<TInput>,
@@ -47,7 +47,7 @@ namespace Shenanicode.Rollback {
 
 		internal unsafe InputHandle(
 			Type inputType,
-			Type sessionType,
+			int messageId,
 			delegate*<int, int, int> clearPrediction,
 			delegate*<int, void> populateUpTo,
 			delegate*<int, void> discardUpTo,
@@ -63,7 +63,7 @@ namespace Shenanicode.Rollback {
 			delegate*<int, ushort, bool> isFresh,
 			delegate*<int, MaskEnumerator> getFreshInputs) {
 			InputType = inputType;
-			SessionType = sessionType;
+			MessageId = messageId;
 			_clearPrediction = clearPrediction;
 			_populateUpTo = populateUpTo;
 			_discardUpTo = discardUpTo;
@@ -165,14 +165,14 @@ namespace Shenanicode.Rollback {
 		private readonly unsafe delegate*<int, int, byte> _getSignalLocalOrder;
 		private readonly unsafe delegate*<int, ushort, byte, int> _getSignalIndex;
 		public readonly Type SignalType;
-		public readonly Type SessionType;
+		public readonly int MessageId;
 
-		internal static unsafe SignalHandle Create<TSessionType, TSignal>()
+		internal static unsafe SignalHandle Create<TSessionType, TSignal>(int messageId)
 			where TSessionType : ISessionType
 			where TSignal : struct, ISignal {
 			return new SignalHandle(
 				typeof(TSignal),
-				typeof(TSessionType),
+				messageId,
 				&Session<TSessionType>._SignalClearPrediction<TSignal>,
 				&Session<TSessionType>._SignalClear<TSignal>,
 				&Session<TSessionType>._SignalPopulateUpTo<TSignal>,
@@ -189,7 +189,7 @@ namespace Shenanicode.Rollback {
 
 		internal unsafe SignalHandle(
 			Type signalType,
-			Type sessionType,
+			int messageId,
 			delegate*<int, int, int> clearPrediction,
 			delegate*<int, void> clear,
 			delegate*<int, void> populateUpTo,
@@ -203,7 +203,7 @@ namespace Shenanicode.Rollback {
 			delegate*<int, int, byte> getSignalLocalOrder,
 			delegate*<int, ushort, byte, int> getSignalIndex) {
 			SignalType = signalType;
-			SessionType = sessionType;
+			MessageId = messageId;
 			_clearPrediction = clearPrediction;
 			_clear = clear;
 			_populateUpTo = populateUpTo;

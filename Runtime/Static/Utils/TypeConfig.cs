@@ -1,11 +1,8 @@
 using System;
 using System.Reflection;
-using FFS.Libraries.StaticPack;
 
 namespace Shenanicode.Rollback {
-	public struct StaticTypeConfig<T> where T : struct {
-		public static readonly IPackArrayStrategy<T> ReadWriteStrategy;
-
+	public struct StaticTypeConfig<T> where T : unmanaged {
 		public static readonly T DefaultValue;
 
 		static StaticTypeConfig() {
@@ -14,25 +11,20 @@ namespace Shenanicode.Rollback {
 												?? Activator.CreateInstance(configType));
 			var finalConfig = staticConfig.MergeWith(TypeConfig<T>.Default);
 
-			ReadWriteStrategy = finalConfig.ReadWriteStrategy;
 			DefaultValue = finalConfig.DefaultValue!.Value;
 		}
 	}
 
 	public struct TypeConfig<T> where T : struct {
-		public IPackArrayStrategy<T> ReadWriteStrategy;
-
 		public T? DefaultValue;
 
 		public static readonly TypeConfig<T> Default = new() {
 			DefaultValue = default(T),
-			ReadWriteStrategy = TypeUtils.TryCreateUnmanagedPackArrayStrategy<T>() ?? new StructPackArrayStrategy<T>(),
 		};
 
 		internal TypeConfig<T> MergeWith(TypeConfig<T> other) {
 			return new TypeConfig<T> {
 				DefaultValue = DefaultValue ?? other.DefaultValue,
-				ReadWriteStrategy = ReadWriteStrategy ?? other.ReadWriteStrategy,
 			};
 		}
 	}

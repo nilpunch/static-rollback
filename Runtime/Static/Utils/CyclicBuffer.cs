@@ -6,9 +6,11 @@ namespace Shenanicode.Rollback {
 	[Il2CppSetOption(Option.NullChecks, false)]
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
 	public struct CyclicBuffer<T> {
+		private const int InitialCapacity = 128;
+
 		internal T[] Data;
 
-		internal int CycleCapacity { get; private set; }
+		internal int CycleCapacityMinusOne { get; private set; }
 
 		internal int CycledCount { get; private set; }
 
@@ -19,10 +21,11 @@ namespace Shenanicode.Rollback {
 			get => TailIndex - CycledCount;
 		}
 
-		public static CyclicBuffer<T> Create(int startIndex = 0) {
+		public static CyclicBuffer<T> Create(int startIndex = 0, int initialCapacity = InitialCapacity) {
 			return new CyclicBuffer<T>() {
-				Data = new T[4],
-				TailIndex = startIndex
+				Data = new T[initialCapacity],
+				CycleCapacityMinusOne = initialCapacity - 1,
+				TailIndex = startIndex,
 			};
 		}
 
@@ -32,7 +35,7 @@ namespace Shenanicode.Rollback {
 				if (index < HeadIndex || index >= TailIndex) {
 					throw new ArgumentOutOfRangeException(nameof(index), index, $"List works in range [{HeadIndex}, {TailIndex}).");
 				}
-				return ref Data[MathUtils.FastMod(index, CycleCapacity)];
+				return ref Data[index & CycleCapacityMinusOne];
 			}
 		}
 
@@ -43,9 +46,11 @@ namespace Shenanicode.Rollback {
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ref T Append() {
-			EnsureCapacity(CycledCount + 1);
+			if (CycleCapacityMinusOne < CycledCount) {
+				Resize(MathUtils.RoundUpToPowerOfTwo(CycledCount + 1));
+			}
 
-			ref var data = ref Data[MathUtils.FastMod(TailIndex, CycleCapacity)];
+			ref var data = ref Data[TailIndex & CycleCapacityMinusOne];
 			TailIndex++;
 			CycledCount++;
 
@@ -75,34 +80,14 @@ namespace Shenanicode.Rollback {
 			TailIndex = startIndex;
 		}
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void TrimExcess() {
-			var adjustedCycledCount = MathUtils.RoundUpToPowerOfTwo(CycledCount);
-			if (adjustedCycledCount < CycleCapacity) {
-				Resize(adjustedCycledCount);
-			}
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private void EnsureCapacity(int capacity) {
-			if (CycleCapacity < capacity) {
-				Resize(MathUtils.RoundUpToPowerOfTwo(capacity));
-			}
-		}
-
 		private void Resize(int newCapacity) {
-			if (newCapacity == 0) {
-				Data = Array.Empty<T>();
-				CycleCapacity = newCapacity;
-				return;
-			}
-
+			var newCapacityMinusOne = newCapacity - 1;
 			var newData = new T[newCapacity];
 			for (var i = HeadIndex; i < TailIndex; i++) {
-				newData[MathUtils.FastMod(i, newCapacity)] = Data[MathUtils.FastMod(i, CycleCapacity)];
+				newData[i & newCapacityMinusOne] = Data[i & CycleCapacityMinusOne];
 			}
 			Data = newData;
-			CycleCapacity = newCapacity;
+			CycleCapacityMinusOne = newCapacityMinusOne;
 		}
 	}
 }

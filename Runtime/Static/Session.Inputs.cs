@@ -9,13 +9,13 @@ namespace Shenanicode.Rollback {
 	public interface IInput { }
 
 	[StructLayout(LayoutKind.Sequential)]
-	public readonly struct Input<TInput> where TInput : struct, IInput {
-		public readonly TInput LastFreshInput;
-		public readonly int TicksPassed;
-		public readonly bool IsApproved;
+	public struct Input<T> where T : unmanaged, IInput {
+		public ushort TicksPassed;
+		public bool IsApproved;
+		public T Data;
 
-		public Input(TInput lastFreshInput, int ticksPassed, bool isApproved) {
-			LastFreshInput = lastFreshInput;
+		public Input(T data, ushort ticksPassed, bool isApproved) {
+			Data = data;
 			TicksPassed = ticksPassed;
 			IsApproved = isApproved;
 		}
@@ -25,18 +25,24 @@ namespace Shenanicode.Rollback {
 			get => TicksPassed == 0;
 		}
 
-		public static readonly Input<TInput> Stale = new(StaticTypeConfig<TInput>.DefaultValue, int.MaxValue, false);
+		public static readonly Input<T> Stale = new(StaticTypeConfig<T>.DefaultValue, ushort.MaxValue, false);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Input<TInput> Aged() {
-			var clampedNextTick = MathUtils.SaturationAdd(TicksPassed, 1);
-			return new Input<TInput>(LastFreshInput, clampedNextTick, IsApproved);
+		public Input<T> Aged() {
+			unchecked {
+				var clampedNextTick = (ushort)(TicksPassed + 1);
+				if (clampedNextTick < TicksPassed)
+				{
+					clampedNextTick = ushort.MaxValue;
+				}
+				return new Input<T>(Data, clampedNextTick, IsApproved);
+			}
 		}
 	}
 
 	[Il2CppSetOption(Option.NullChecks, false)]
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-	public struct AllInputs<T> where T : struct, IInput {
+	public struct AllInputs<T> where T : unmanaged, IInput {
 		public int UsedChannels { get; private set; }
 
 		public Input<T>[] Inputs { get; private set; }
@@ -69,7 +75,7 @@ namespace Shenanicode.Rollback {
 
 			ref var existingInput = ref Inputs[channel];
 			if (existingInput.IsFresh) {
-				if (!EqualityComparer<T>.Default.Equals(existingInput.LastFreshInput, input)) {
+				if (!EqualityComparer<T>.Default.Equals(existingInput.Data, input)) {
 					return SetResult.Conflict;
 				}
 
@@ -248,8 +254,8 @@ namespace Shenanicode.Rollback {
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public AllInputs<T> GetInputs(int tick) {
-				return _inputs[tick];
+			public ref AllInputs<T> GetInputs(int tick) {
+				return ref _inputs[tick];
 			}
 
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -323,6 +329,7 @@ namespace Shenanicode.Rollback {
 				return clearedTicksCount;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public void HardReset(int startTick) {
 				_inputs.Reset(startTick);
 				ref var inputs = ref _inputs.Append();
@@ -360,6 +367,7 @@ namespace Shenanicode.Rollback {
 				ConfirmLocalChangesUpTo(_inputs.TailIndex);
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public ReadResult ReadApproved(int tick, ushort channel, ref BinaryPackReader reader) {
 				PopulateUpTo(tick);
 
@@ -384,6 +392,7 @@ namespace Shenanicode.Rollback {
 				return ReadResult.Success;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public ReadResult ReadFullInput(int tick, ushort channel, ref BinaryPackReader reader) {
 				PopulateUpTo(tick);
 
@@ -401,14 +410,17 @@ namespace Shenanicode.Rollback {
 				return ReadResult.Success;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public void Write(int tick, ushort channel, ref BinaryPackWriter writer) {
-				TypeUtils.UnmanagedWrite(ref writer, _inputs[tick].Get(channel).LastFreshInput);
+				TypeUtils.UnmanagedWrite(ref writer, _inputs[tick].Get(channel).Data);
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public void WriteFullInput(int tick, ushort channel, ref BinaryPackWriter writer) {
 				TypeUtils.UnmanagedWrite(ref writer, _inputs[tick].Get(channel));
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public ReadResult Skip(ref BinaryPackReader reader) {
 				if (!reader.HasNext(_sizeOfUnmanaged)) {
 					return ReadResult.NotEnoughData;
@@ -419,18 +431,22 @@ namespace Shenanicode.Rollback {
 				return ReadResult.Success;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public int GetUsedChannels(int tick) {
 				return _inputs[tick].UsedChannels;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public int GetFreshInputsCount(int tick) {
 				return _inputs[tick].FreshInputsCount();
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public bool IsFresh(int tick, ushort channel) {
 				return _inputs[tick].Inputs[channel].IsFresh;
 			}
 
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			public MaskEnumerator GetFreshInputs(int tick) {
 				return _inputs[tick].GetFreshInputs();
 			}

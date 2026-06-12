@@ -63,7 +63,7 @@ namespace Shenanicode.Rollback {
 			writer.WriteShort((short)signalHandles.Length);
 
 			foreach (var signalHandle in signalHandles) {
-				MessageSerializer.WriteMessageId(Session<TSessionType>.GetSignalMessageId(signalHandle.SignalType), ref writer);
+				MessageSerializer.WriteMessageId(signalHandle.MessageId, ref writer);
 
 				var signalsCount = signalHandle.GetSignalsCount(tick);
 				writer.WriteShort((short)signalsCount);
@@ -79,7 +79,7 @@ namespace Shenanicode.Rollback {
 			writer.WriteShort((short)inputHandles.Length);
 
 			foreach (var inputHandle in inputHandles) {
-				MessageSerializer.WriteMessageId(Session<TSessionType>.GetInputMessageId(inputHandle.InputType), ref writer);
+				MessageSerializer.WriteMessageId(inputHandle.MessageId, ref writer);
 
 				var usedChannels = inputHandle.GetUsedChannels(tick);
 				writer.WriteShort((short)usedChannels);
