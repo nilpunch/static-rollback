@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;netstandard2.1</TargetFrameworks>
+		<OutputType>library</OutputType>
+		<LangVersion>13</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Nullable>disable</Nullable>
+		<RootNamespace>Shenanicode.Rollback</RootNamespace>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>0.1.0</Version>
+		<Title>Static Rollback</Title>
+		<Authors>nilpunch</Authors>
+		<Copyright>Copyright (c) 2026 Daniil Pankevich</Copyright>
+		<PackageLicenseUrl>https://github.com/nilpunch/static-rollback/blob/master/LICENSE</PackageLicenseUrl>
+		<PackageTags>ecs; gamedev; unity; rollback; prediction; netcode</PackageTags>
+		<RepositoryUrl>https://github.com/nilpunch/static-rollback</RepositoryUrl>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="..\LICENSE" Pack="true" PackagePath=""/>
+		<Content Include="..\CHANGELOG.md" Pack="true" PackagePath=""/>
+		<Content Include="..\README.md" Pack="true" PackagePath=""/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="**\*.meta"/>
+		<None Remove="**\*.asmdef"/>
+		<None Remove="package.json"/>
+		<None Remove="LICENSE.meta"/>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
+		<PackageReference Include="FFS.StaticPack.Debug" Version="1.2.6" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<PackageReference Include="FFS.StaticPack" Version="1.2.6" />
+	</ItemGroup>
+</Project>

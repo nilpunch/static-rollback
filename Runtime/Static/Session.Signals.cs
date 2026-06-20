@@ -4,6 +4,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FFS.Libraries.StaticPack;
 using Unity.IL2CPP.CompilerServices;
+#if NET5_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Shenanicode.Rollback {
 	public enum ReadResult : byte {
@@ -291,7 +294,7 @@ namespace Shenanicode.Rollback {
 				if (!_hasWrite && !_hasRead) {
 					_isUnmanagedPack = TypeUtils.TryRegisterUnmanagedPacking<T>();
 					if (_isUnmanagedPack) {
-						_sizeOfUnmanaged = (uint)TypeUtils.SizeOfUnmanaged(typeof(T));
+						_sizeOfUnmanaged = TypeUtils.SizeOfUnmanaged(typeof(T));
 					}
 				}
 			}
@@ -543,7 +546,7 @@ namespace Shenanicode.Rollback {
 	[Il2CppEagerStaticClassConstruction]
 	internal static class SignalType<
 		#if NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
 		#endif
 		T> where T : struct, ISignal {
 		private static readonly Type[] WriteParams = {
@@ -554,8 +557,7 @@ namespace Shenanicode.Rollback {
 			typeof(BinaryPackReader).MakeByRefType(), typeof(ReadResult).MakeByRefType()
 		};
 
-		private static readonly Type[] DisposeParams =
-			{ };
+		private static readonly Type[] DisposeParams = { };
 
 		internal static bool HasWrite() {
 			return HasMethod(typeof(T), nameof(ISignal.Write), WriteParams);
@@ -571,7 +573,7 @@ namespace Shenanicode.Rollback {
 
 		private static bool HasMethod(
 			#if NET5_0_OR_GREATER
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 			#endif
 			Type structType,
 			string methodName,

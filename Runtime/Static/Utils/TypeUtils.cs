@@ -62,11 +62,11 @@ namespace Shenanicode.Rollback {
 			return isUnmanaged;
 		}
 
-		private static readonly Dictionary<Type, int> s_sizeOfCache = new();
+		private static readonly Dictionary<Type, uint> s_sizeOfCache = new();
 
 		public static unsafe uint SizeOf<T>() where T : unmanaged => (uint)sizeof(T);
 
-		public static int SizeOfUnmanaged(Type t) {
+		public static uint SizeOfUnmanaged(Type t) {
 			if (!s_sizeOfCache.TryGetValue(t, out var size)) {
 				try {
 					size = SizeOfGeneric(t);
@@ -80,24 +80,12 @@ namespace Shenanicode.Rollback {
 			return size;
 		}
 
-		private static int SizeOfGeneric(Type t) {
+		private static uint SizeOfGeneric(Type t) {
 			var genericMethod = typeof(TypeUtils)
 								.GetMethod(nameof(SizeOf), BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
 								!.MakeGenericMethod(t);
-			var size = (int)genericMethod.Invoke(null, new object[] { });
+			var size = (uint)genericMethod.Invoke(null, new object[] { });
 			return size;
-		}
-
-		internal static IPackArrayStrategy<T> TryCreateUnmanagedPackArrayStrategy<T>() where T : struct {
-			try {
-				var unmanagedPackStrategyType = typeof(UnmanagedPackArrayStrategy<>).MakeGenericType(typeof(T));
-				return (IPackArrayStrategy<T>)Activator.CreateInstance(unmanagedPackStrategyType);
-			}
-			catch (ArgumentException argumentException) {
-				return null;
-			}
-
-			return null;
 		}
 
 		internal static bool TryRegisterUnmanagedPacking<T>() where T : struct {

@@ -1,13 +1,10 @@
 {
-    "name": "Shenanicode.Rollback",
-    "rootNamespace": "Shenanicode.Rollback",
-    "references": [
-        "FFS.StaticPack",
-        "Shenanicode.Preserve"
-    ],
+    "name": "Shenanicode.Preserve",
+    "rootNamespace": "",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": true,
+    "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,
