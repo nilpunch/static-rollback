@@ -23,7 +23,7 @@ namespace Shenanicode.Rollback {
 			}
 		}
 
-		private static AuthoritativeTicksTracker AuthoritativeTicks { get; set; }
+		private static UnorderedMessagesTracker UnorderedMessagesTracker { get; set; }
 		private static ILogger Logger { get; set; }
 		private static IFullSyncHandler FullSyncHandler { get; set; }
 		private static double PingIntervalSeconds { get; set; }
@@ -59,7 +59,7 @@ namespace Shenanicode.Rollback {
 			FullSyncHandler = fullSyncHandler ?? NullFullSyncHandler.Instance;
 			TickSync = tickSync ?? new AdaptiveTickSync();
 			Connection = connection;
-			AuthoritativeTicks = AuthoritativeTicksTracker.Create();
+			UnorderedMessagesTracker = UnorderedMessagesTracker.Create();
 			Channel = default;
 			PingIntervalSeconds = pingIntervalSeconds;
 			LastPingTime = -1;
@@ -93,7 +93,7 @@ namespace Shenanicode.Rollback {
 			FullSyncHandler = default;
 			TickSync = default;
 			Connection = default;
-			AuthoritativeTicks = default;
+			UnorderedMessagesTracker = default;
 			Channel = default;
 			PingIntervalSeconds = default;
 			LastPingTime = default;
@@ -117,7 +117,7 @@ namespace Shenanicode.Rollback {
 			}
 
 			ReadMessages(clientTime);
-			AdvanceAuthoritativeTicks();
+			UpdatePredictedInputs();
 			SendPingIfNeeded(clientTime);
 			FlushConnection();
 
@@ -257,7 +257,7 @@ namespace Shenanicode.Rollback {
 
 			Session<TSessionType>.SaveFrame();
 			TickSync.HardReset(serverTick + 1);
-			AuthoritativeTicks.HardReset(serverTick + 1);
+			UnorderedMessagesTracker.HardReset(serverTick + 1);
 			LastPingTime = -1;
 			Synced = true;
 
@@ -271,7 +271,7 @@ namespace Shenanicode.Rollback {
 				return readResult;
 			}
 
-			return AuthoritativeTicks.TrySetExpectedMessages(tickInfoMessage.Tick, tickInfoMessage.MessagesCount)
+			return UnorderedMessagesTracker.TrySetExpectedMessages(tickInfoMessage.Tick, tickInfoMessage.MessagesCount)
 				? ReadResult.Success
 				: ReadResult.Failure;
 		}
@@ -282,7 +282,7 @@ namespace Shenanicode.Rollback {
 
 			if (CanAcceptTick(tick)) {
 				var result = MessageSerializer<TSessionType>.ReadServerInput(messageId, tick, channel, ref reader);
-				if (result == ReadResult.Success && !AuthoritativeTicks.TryMarkMessageReceived(tick)) {
+				if (result == ReadResult.Success && !UnorderedMessagesTracker.TryMarkMessageReceived(tick)) {
 					return ReadResult.Failure;
 				}
 
@@ -297,13 +297,12 @@ namespace Shenanicode.Rollback {
 			return tick >= TickSync.MinPredictionTick;
 		}
 
-		private static void AdvanceAuthoritativeTicks() {
-			var nextPredictionTick = AuthoritativeTicks.ConsumeCompletedFrom(TickSync.MinPredictionTick);
-			if (nextPredictionTick <= TickSync.MinPredictionTick) {
+		private static void UpdatePredictedInputs() {
+			if (!UnorderedMessagesTracker.TryMoveToNextTick(out var nextTick)) {
 				return;
 			}
 
-			var confirmedServerTick = nextPredictionTick - 1;
+			var confirmedServerTick = nextTick - 1;
 
 			foreach (var inputHandle in Session<TSessionType>.GetAllInputHandles()) {
 				inputHandle.ClearPrediction(TickSync.MinPredictionTick, confirmedServerTick);
@@ -313,7 +312,7 @@ namespace Shenanicode.Rollback {
 				signalHandle.ClearPrediction(TickSync.MinPredictionTick, confirmedServerTick);
 			}
 
-			TickSync.UpdateMinPredictionTick(nextPredictionTick);
+			TickSync.UpdateMinPredictionTick(nextTick);
 		}
 
 		private static SessionConfig ApplyClientServerDefaults(SessionConfig config) {

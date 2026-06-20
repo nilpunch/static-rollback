@@ -1,5 +1,5 @@
 namespace Shenanicode.Rollback {
-	public struct AuthoritativeTicksTracker {
+	public struct UnorderedMessagesTracker {
 		private struct TickReceiveState {
 			public ushort ExpectedMessages;
 			public ushort ReceivedMessages;
@@ -8,11 +8,11 @@ namespace Shenanicode.Rollback {
 			public readonly bool IsComplete => HasTickInfo && ReceivedMessages == ExpectedMessages;
 		}
 
-		private CyclicBuffer<TickReceiveState> _ticks;
+		private RingBuffer<TickReceiveState> _ticks;
 
-		public static AuthoritativeTicksTracker Create(int startTick = 0) {
-			return new AuthoritativeTicksTracker {
-				_ticks = CyclicBuffer<TickReceiveState>.Create(startTick)
+		public static UnorderedMessagesTracker Create(int startTick = 0) {
+			return new UnorderedMessagesTracker {
+				_ticks = RingBuffer<TickReceiveState>.Create(startTick)
 			};
 		}
 
@@ -57,26 +57,29 @@ namespace Shenanicode.Rollback {
 			return true;
 		}
 
-		public int ConsumeCompletedFrom(int tick) {
-			if (tick < _ticks.HeadIndex) {
-				tick = _ticks.HeadIndex;
+		public bool TryMoveToNextTick(out int nextTick) {
+			if (_ticks.CycledCount == 0) {
+				nextTick = default;
+				return false;
 			}
 
-			var nextTick = tick;
+			nextTick = _ticks.HeadIndex;
 			while (nextTick < _ticks.TailIndex && _ticks[nextTick].IsComplete) {
 				nextTick += 1;
 			}
 
-			if (nextTick > tick) {
-				_ticks.RemoveUpTo(nextTick);
+			if (nextTick == _ticks.HeadIndex) {
+				return false;
 			}
 
-			return nextTick;
+			_ticks.RemoveUpTo(nextTick);
+
+			return true;
 		}
 
 		private ref TickReceiveState EnsureTick(int tick) {
 			while (_ticks.TailIndex <= tick) {
-				_ticks.Append(default(TickReceiveState));
+				_ticks.Append(default);
 			}
 
 			return ref _ticks[tick];

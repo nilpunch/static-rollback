@@ -233,7 +233,7 @@ namespace Shenanicode.Rollback {
 
 			private readonly IPredictionReceiver _predictionReceiver;
 			private int _localEarliestChangedTick;
-			private CyclicBuffer<AllInputs<T>> _inputs;
+			private RingBuffer<AllInputs<T>> _inputs;
 
 			private readonly uint _sizeOfUnmanaged;
 			private readonly uint _sizeOfUnmanagedFull;
@@ -245,7 +245,7 @@ namespace Shenanicode.Rollback {
 
 			public Inputs(int startTick, IPredictionReceiver predictionReceiver = null) {
 				_predictionReceiver = predictionReceiver;
-				_inputs = CyclicBuffer<AllInputs<T>>.Create(startTick);
+				_inputs = RingBuffer<AllInputs<T>>.Create(startTick);
 				_inputs.Append().EnsureInitialized();
 				_localEarliestChangedTick = startTick;
 

@@ -268,7 +268,7 @@ namespace Shenanicode.Rollback {
 			public static SignalHandle Handle;
 
 			private readonly IPredictionReceiver _predictionReceiver;
-			private CyclicBuffer<AllSignals<T>> _signalsBuffer;
+			private RingBuffer<AllSignals<T>> _signalsBuffer;
 
 			private readonly bool _isUnmanagedPack;
 			private readonly uint _sizeOfUnmanaged;
@@ -283,7 +283,7 @@ namespace Shenanicode.Rollback {
 
 			public Signals(int startTick, IPredictionReceiver predictionReceiver = null) {
 				_predictionReceiver = predictionReceiver;
-				_signalsBuffer = CyclicBuffer<AllSignals<T>>.Create(startTick);
+				_signalsBuffer = RingBuffer<AllSignals<T>>.Create(startTick);
 
 				_isUnmanagedPack = false;
 				_sizeOfUnmanaged = 0;

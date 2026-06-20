@@ -5,7 +5,7 @@ using Unity.IL2CPP.CompilerServices;
 namespace Shenanicode.Rollback {
 	[Il2CppSetOption(Option.NullChecks, false)]
 	[Il2CppSetOption(Option.ArrayBoundsChecks, false)]
-	public struct CyclicBuffer<T> {
+	public struct RingBuffer<T> {
 		private const int InitialCapacity = 128;
 
 		internal T[] Data;
@@ -21,8 +21,8 @@ namespace Shenanicode.Rollback {
 			get => TailIndex - CycledCount;
 		}
 
-		public static CyclicBuffer<T> Create(int startIndex = 0, int initialCapacity = InitialCapacity) {
-			return new CyclicBuffer<T>() {
+		public static RingBuffer<T> Create(int startIndex = 0, int initialCapacity = InitialCapacity) {
+			return new RingBuffer<T>() {
 				Data = new T[initialCapacity],
 				CycleCapacityMinusOne = initialCapacity - 1,
 				TailIndex = startIndex,

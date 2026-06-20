@@ -111,6 +111,11 @@ namespace Shenanicode.Rollback {
 			get => Data.Instance.TickRate;
 		}
 
+		public static int FramesCapacity {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Data.Instance.FramesCapacity;
+		}
+
 		public static int RollbackTicksCapacity {
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => (Data.Instance.FramesCapacity - 1) * Data.Instance.SaveEachNthTick;

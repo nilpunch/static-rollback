@@ -44,29 +44,6 @@ namespace Shenanicode.Rollback {
 			CurrentFrame = LoopNegative(CurrentFrame - frames, FramesCapacity);
 		}
 
-		/// <summary>
-		/// Returns the frame index from a previous frame without modifying the current state.<br/>
-		/// A value of 0 returns the <see cref="CurrentFrame"/>.
-		/// </summary>
-		/// <param name="frames">
-		/// The number of frames to peek back. Must be non-negative and not exceed <see cref="CanRollbackFrames"/>.
-		/// </param>
-		/// <returns>
-		/// The cycled frame index corresponding to the specified number of frames ago.
-		/// </returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public int Peekback(int frames) {
-			if (frames < 0) {
-				throw new ArgumentOutOfRangeException(nameof(frames), frames, $"Provided argument is negative.");
-			}
-
-			if (frames > CanRollbackFrames) {
-				throw new ArgumentOutOfRangeException(nameof(frames), frames, $"Can't peekback this far. CanRollbackFrames: {CanRollbackFrames}.");
-			}
-
-			return LoopNegative(CurrentFrame - frames, FramesCapacity);
-		}
-
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static int Loop(int a, int b) {
 			return a % b;
