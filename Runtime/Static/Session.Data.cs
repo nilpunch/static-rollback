@@ -24,8 +24,9 @@ namespace Shenanicode.Rollback {
 			public int CurrentTick;
 			public int EarliestChangedTick;
 
-			public UpdateRootGroup UpdateRoots;
-			public RollbackGroup Rollbacks;
+			public IUpdateRoot UpdateRoot;
+			public IRollback Rollback;
+			public IInterpolationReceiver InterpolationReceiver;
 
 			public Dictionary<Type, InputHandle> InputHandles;
 			public Dictionary<Type, SignalHandle> SignalHandles;
@@ -60,8 +61,9 @@ namespace Shenanicode.Rollback {
 				StartTick = 0;
 				CurrentTick = 0;
 				EarliestChangedTick = 0;
-				UpdateRoots = new UpdateRootGroup();
-				Rollbacks = new RollbackGroup(FramesCapacity);
+				UpdateRoot = new IUpdateRoot.Empty();
+				Rollback = new CyclicFrameCounter(FramesCapacity);
+				InterpolationReceiver = new IInterpolationReceiver.Empty();
 				InputHandles = new Dictionary<Type, InputHandle>();
 				SignalHandles = new Dictionary<Type, SignalHandle>();
 				_messageIdsByInputs = new Dictionary<Type, int>();
@@ -310,26 +312,30 @@ namespace Shenanicode.Rollback {
 					var targetFrame = Math.Max(StartTick, CurrentTick - ticksToRollback) / saveEachNthTick;
 					var framesToRollback = currentFrame - targetFrame;
 
-					if (framesToRollback > Rollbacks.CanRollbackFrames) {
-						throw new InvalidOperationException($"Can't rollback this far. CanRollbackFrames: {Rollbacks.CanRollbackFrames}, Actual: {framesToRollback}");
+					if (framesToRollback > Rollback.CanRollbackFrames) {
+						throw new InvalidOperationException($"Can't rollback this far. CanRollbackFrames: {Rollback.CanRollbackFrames}, Actual: {framesToRollback}");
 					}
 
-					Rollbacks.Rollback(framesToRollback);
+					Rollback.Rollback(framesToRollback);
 					CurrentTick = Math.Max(StartTick, (currentFrame - framesToRollback) * saveEachNthTick);
 
 					Reevaluate();
 					PopulateUpTo(targetTick);
 
 					while (CurrentTick < targetTick) {
-						UpdateRoots.Update(CurrentTick);
+						if (CurrentTick == targetTick - 1) {
+							InterpolationReceiver.SaveInterpolationState();
+						}
+
+						UpdateRoot.Update(CurrentTick);
 						CurrentTick += 1;
 
 						if (CurrentTick % saveEachNthTick == 0) {
-							Rollbacks.SaveFrame();
+							Rollback.SaveFrame();
 						}
 					}
 
-					DiscardUpTo(Math.Min(StartTick, targetTick - (Rollbacks.CanRollbackFrames + 1) * saveEachNthTick));
+					DiscardUpTo(Math.Min(StartTick, targetTick - (Rollback.CanRollbackFrames + 1) * saveEachNthTick));
 				}
 				else {
 					if (targetTick < CurrentTick) {
@@ -340,7 +346,11 @@ namespace Shenanicode.Rollback {
 					PopulateUpTo(targetTick);
 
 					while (CurrentTick < targetTick) {
-						UpdateRoots.Update(CurrentTick);
+						if (CurrentTick == targetTick - 1) {
+							InterpolationReceiver.SaveInterpolationState();
+						}
+
+						UpdateRoot.Update(CurrentTick);
 						CurrentTick += 1;
 					}
 				}

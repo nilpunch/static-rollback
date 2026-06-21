@@ -85,7 +85,8 @@ namespace Shenanicode.Rollback {
 			AssertClientIsCreatedOrInitialized();
 			AssertSessionStatus(Status);
 
-			Connection?.Close();
+			Connection.ResetBuffers();
+			Connection.Close();
 
 			Session<TSessionType>.Destroy();
 

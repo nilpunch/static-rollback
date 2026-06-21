@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 
 namespace Shenanicode.Rollback {
-	public class CyclicFrameCounter {
+	public class CyclicFrameCounter : IRollback {
 		private int _savedFrames;
 
 		public CyclicFrameCounter(int framesCapacity) {

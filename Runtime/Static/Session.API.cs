@@ -13,6 +13,18 @@ namespace Shenanicode.Rollback {
 
 	public interface IUpdateRoot {
 		void Update(int tick);
+
+		class Empty : IUpdateRoot {
+			public void Update(int tick) { }
+		}
+	}
+
+	public interface IInterpolationReceiver {
+		void SaveInterpolationState();
+
+		class Empty : IInterpolationReceiver {
+			public void SaveInterpolationState() { }
+		}
 	}
 
 	/// <summary>
@@ -140,21 +152,27 @@ namespace Shenanicode.Rollback {
 		public static TypeRegistrar Types() => default;
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void AddUpdateRoot(IUpdateRoot updateRoot) {
+		public static void SetUpdateRoot(IUpdateRoot updateRoot) {
 			AssertSessionIsCreatedOrInitialized();
-			Data.Instance.UpdateRoots.Add(updateRoot);
+			Data.Instance.UpdateRoot = updateRoot;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void AddRollback(IRollback rollback) {
+		public static void SetRollback(IRollback rollback) {
 			AssertSessionIsCreatedOrInitialized();
-			Data.Instance.Rollbacks.Add(rollback);
+			Data.Instance.Rollback = rollback;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void SetInterpolationReceiver(IInterpolationReceiver interpolationReceiver) {
+			AssertSessionIsCreatedOrInitialized();
+			Data.Instance.InterpolationReceiver = interpolationReceiver;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static void SaveFrame() {
 			AssertSessionIsInitialized();
-			Data.Instance.Rollbacks.SaveFrame();
+			Data.Instance.Rollback.SaveFrame();
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

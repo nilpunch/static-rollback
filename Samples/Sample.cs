@@ -55,8 +55,8 @@ public class Program {
 				framesCapacity: 26));
 
 		// Register simulation entry points.
-		S.AddUpdateRoot(new SimulationUpdateRoot());
-		S.AddRollback(new SimulationRollback());
+		S.SetUpdateRoot(new SimulationUpdateRoot());
+		S.SetRollback(new SimulationRollback());
 
 		// Auto-register all inputs and signals from the calling assembly.
 		S.Types().RegisterAll();

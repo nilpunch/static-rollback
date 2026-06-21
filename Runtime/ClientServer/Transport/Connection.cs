@@ -15,7 +15,7 @@ namespace Shenanicode.Rollback {
 
 	public delegate MessageIteration MessageReadAction<TArgs>(ref BinaryPackReader message, TArgs args);
 
-	public abstract class Connection : IDisposable {
+	public abstract class Connection {
 		protected Queue<BinaryPackWriter> IncomingOrderedMessages { get; } = new();
 		protected Queue<BinaryPackWriter> IncomingUnorderedMessages { get; } = new();
 		protected Queue<BinaryPackWriter> OutgoingOrderedMessages { get; } = new();
@@ -80,11 +80,6 @@ namespace Shenanicode.Rollback {
 			while (OutgoingUnorderedMessages.TryDequeue(out var writer)) {
 				writer.Dispose();
 			}
-		}
-
-		public void Dispose() {
-			ResetBuffers();
-			Close();
 		}
 	}
 
