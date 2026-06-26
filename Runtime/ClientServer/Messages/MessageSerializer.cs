@@ -3,11 +3,11 @@ using FFS.Libraries.StaticPack;
 
 namespace Shenanicode.Rollback {
 	public static class MessageSerializer {
-		public static void WriteMessageId(int messageId, ref BinaryPackWriter writer) {
+		public static void WriteMessageId(this ref BinaryPackWriter writer, int messageId) {
 			writer.WriteShort((short)messageId);
 		}
 
-		public static void WriteMessageId(MessageType messageType, ref BinaryPackWriter writer) {
+		public static void WriteMessageId(this ref BinaryPackWriter writer, MessageType messageType) {
 			writer.WriteShort((short)messageType);
 		}
 
@@ -20,6 +20,11 @@ namespace Shenanicode.Rollback {
 			messageId = value;
 
 			return ReadResult.Success;
+		}
+
+		public static int ReadMessageId(this ref BinaryPackReader reader) {
+			reader.ReadMessageId(out var messageId);
+			return messageId;
 		}
 	}
 
@@ -63,7 +68,7 @@ namespace Shenanicode.Rollback {
 			writer.WriteShort((short)signalHandles.Length);
 
 			foreach (var signalHandle in signalHandles) {
-				MessageSerializer.WriteMessageId(signalHandle.MessageId, ref writer);
+				writer.WriteMessageId(signalHandle.MessageId);
 
 				var signalsCount = signalHandle.GetSignalsCount(tick);
 				writer.WriteShort((short)signalsCount);
@@ -79,7 +84,7 @@ namespace Shenanicode.Rollback {
 			writer.WriteShort((short)inputHandles.Length);
 
 			foreach (var inputHandle in inputHandles) {
-				MessageSerializer.WriteMessageId(inputHandle.MessageId, ref writer);
+				writer.WriteMessageId(inputHandle.MessageId);
 
 				var usedChannels = inputHandle.GetUsedChannels(tick);
 				writer.WriteShort((short)usedChannels);
@@ -94,7 +99,7 @@ namespace Shenanicode.Rollback {
 			var signalSetsCount = reader.ReadShort();
 
 			for (var i = 0; i < signalSetsCount; i++) {
-				var messageId = reader.ReadShort();
+				var messageId = reader.ReadMessageId();
 				var signalsCount = reader.ReadShort();
 				var signalHandle = GetSignalHandle(messageId);
 
@@ -108,7 +113,7 @@ namespace Shenanicode.Rollback {
 			var inputSetsCount = reader.ReadShort();
 
 			for (var i = 0; i < inputSetsCount; i++) {
-				var messageId = reader.ReadShort();
+				var messageId = reader.ReadMessageId();
 				var usedChannels = reader.ReadShort();
 				var inputHandle = GetInputHandle(messageId);
 
@@ -141,7 +146,7 @@ namespace Shenanicode.Rollback {
 
 		public static BinaryPackWriter CreateClientInput(InputHandle inputHandle, int tick, ushort channel) {
 			var writer = BinaryPackWriter.CreateFromPool();
-			MessageSerializer.WriteMessageId(Session<TSessionType>.GetInputMessageId(inputHandle.InputType), ref writer);
+			writer.WriteMessageId(Session<TSessionType>.GetInputMessageId(inputHandle.InputType));
 			writer.WriteInt(tick);
 			inputHandle.Write(tick, channel, ref writer);
 			return writer;
@@ -149,7 +154,7 @@ namespace Shenanicode.Rollback {
 
 		public static BinaryPackWriter CreateClientSignal(SignalHandle signalHandle, int tick, ushort channel, byte localOrder) {
 			var writer = BinaryPackWriter.CreateFromPool();
-			MessageSerializer.WriteMessageId(Session<TSessionType>.GetSignalMessageId(signalHandle.SignalType), ref writer);
+			writer.WriteMessageId(Session<TSessionType>.GetSignalMessageId(signalHandle.SignalType));
 			writer.WriteInt(tick);
 			writer.WriteByte(localOrder);
 			var index = signalHandle.GetSignalIndex(tick, channel, localOrder);
@@ -170,14 +175,14 @@ namespace Shenanicode.Rollback {
 		}
 
 		public static void WriteServerInput(InputHandle inputHandle, int tick, ushort channel, ref BinaryPackWriter writer) {
-			MessageSerializer.WriteMessageId(Session<TSessionType>.GetInputMessageId(inputHandle.InputType), ref writer);
+			writer.WriteMessageId(Session<TSessionType>.GetInputMessageId(inputHandle.InputType));
 			writer.WriteInt(tick);
 			writer.WriteUshort(channel);
 			inputHandle.Write(tick, channel, ref writer);
 		}
 
 		public static void WriteServerSignal(SignalHandle signalHandle, int tick, int index, ref BinaryPackWriter writer) {
-			MessageSerializer.WriteMessageId(Session<TSessionType>.GetSignalMessageId(signalHandle.SignalType), ref writer);
+			writer.WriteMessageId(Session<TSessionType>.GetSignalMessageId(signalHandle.SignalType));
 			writer.WriteInt(tick);
 			writer.WriteUshort(signalHandle.GetSignalChannel(tick, index));
 			writer.WriteByte(signalHandle.GetSignalLocalOrder(tick, index));

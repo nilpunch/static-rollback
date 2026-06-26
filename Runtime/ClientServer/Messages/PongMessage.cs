@@ -7,7 +7,7 @@ namespace Shenanicode.Rollback {
 
 		public static BinaryPackWriter Create(PingMessage pingMessage, double serverReceiveTime) {
 			var writer = BinaryPackWriter.CreateFromPool();
-			MessageSerializer.WriteMessageId(MessageType.Pong, ref writer);
+			writer.WriteMessageId(MessageType.Pong);
 			Write(new PongMessage() {
 					ClientPingSendTime = pingMessage.ClientPingSendTime,
 					ServerReceiveTime = serverReceiveTime
@@ -17,13 +17,13 @@ namespace Shenanicode.Rollback {
 		}
 
 		public static ReadResult Read(ref BinaryPackReader reader, out PongMessage pongMessage) {
-			if (!reader.HasNext(TypeUtils.SizeOf<PongMessage>())) {
-				pongMessage = default;
+			pongMessage = default;
+
+			if (!reader.TryReadDouble(out var clientSendTime) ||
+				!reader.TryReadDouble(out var serverReceiveTime)) {
 				return ReadResult.NotEnoughData;
 			}
 
-			var clientSendTime = reader.ReadDouble();
-			var serverReceiveTime = reader.ReadDouble();
 			pongMessage = new PongMessage() {
 				ClientPingSendTime = clientSendTime,
 				ServerReceiveTime = serverReceiveTime,

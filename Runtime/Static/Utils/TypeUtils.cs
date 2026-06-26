@@ -41,7 +41,7 @@ namespace Shenanicode.Rollback {
 		private static readonly Dictionary<Type, bool> s_managedCache = new();
 
 		public static bool IsManaged(this Type type) {
-			return !IsUnmanaged(type);
+			return !type.IsUnmanaged();
 		}
 
 		public static bool IsUnmanaged(this Type type) {

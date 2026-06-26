@@ -298,7 +298,7 @@ namespace Shenanicode.Rollback {
 		}
 
 		private static uint PrepareFullSync(ref BinaryPackWriter writer) {
-			MessageSerializer.WriteMessageId(MessageType.FullSync, ref writer);
+			writer.WriteMessageId(MessageType.FullSync);
 			var channelPosition = writer.MakePoint(sizeof(ushort));
 
 			writer.WriteInt(Session<TSessionType>.CurrentTick);

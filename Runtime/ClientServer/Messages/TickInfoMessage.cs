@@ -7,7 +7,7 @@ namespace Shenanicode.Rollback {
 
 		public static BinaryPackWriter Create(int tick, ushort messagesCount) {
 			var writer = BinaryPackWriter.CreateFromPool();
-			MessageSerializer.WriteMessageId(MessageType.TickInfo, ref writer);
+			writer.WriteMessageId(MessageType.TickInfo);
 			Write(new TickInfoMessage() {
 					Tick = tick,
 					MessagesCount = messagesCount
@@ -17,13 +17,13 @@ namespace Shenanicode.Rollback {
 		}
 
 		public static ReadResult Read(ref BinaryPackReader reader, out TickInfoMessage tickInfoMessage) {
-			if (!reader.HasNext(TypeUtils.SizeOf<TickInfoMessage>())) {
-				tickInfoMessage = default;
+			tickInfoMessage = default;
+
+			if (!reader.TryReadInt(out var tick) ||
+				!reader.TryReadUshort(out var messagesCount)) {
 				return ReadResult.NotEnoughData;
 			}
 
-			var tick = reader.ReadInt();
-			var messagesCount = reader.ReadUshort();
 			tickInfoMessage = new TickInfoMessage {
 				Tick = tick,
 				MessagesCount = messagesCount,
