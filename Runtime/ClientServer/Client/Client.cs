@@ -90,7 +90,6 @@ namespace Shenanicode.Rollback {
 
 			Session<TSessionType>.Destroy();
 
-			Logger = default;
 			FullSyncHandler = default;
 			TickSync = default;
 			Connection = default;
@@ -100,6 +99,8 @@ namespace Shenanicode.Rollback {
 			LastPingTime = default;
 			Synced = default;
 			Status = SessionStatus.NotCreated;
+			Logger.Log("Client destroyed.");
+			Logger = default;
 		}
 
 		public static int InputPredictionTick(double clientTime) {

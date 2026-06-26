@@ -85,7 +85,6 @@ namespace Shenanicode.Rollback {
 
 			TicksAcceptWindow = default;
 			MaxMessagesPerClient = default;
-			Logger = default;
 			FullSyncHandler = default;
 			ClientSilenceTimeoutSeconds = default;
 			ConnectionListener = default;
@@ -96,6 +95,8 @@ namespace Shenanicode.Rollback {
 			LastInputLogTime = default;
 			BroadcastMessages = default;
 			Status = SessionStatus.NotCreated;
+			Logger.Log("Server destroyed.");
+			Logger = default;
 		}
 
 		public static void Update(double serverTime) {
