@@ -304,15 +304,17 @@ namespace Shenanicode.Rollback {
 			}
 
 			var confirmedServerTick = nextTick - 1;
+			var clearedPrediction = 0;
 
 			foreach (var inputHandle in Session<TSessionType>.GetAllInputHandles()) {
-				inputHandle.ClearPrediction(TickSync.MinPredictionTick, confirmedServerTick);
+				clearedPrediction += inputHandle.ClearPrediction(TickSync.MinPredictionTick, confirmedServerTick);
 			}
 
 			foreach (var signalHandle in Session<TSessionType>.GetAllSignalHandles()) {
-				signalHandle.ClearPrediction(TickSync.MinPredictionTick, confirmedServerTick);
+				clearedPrediction += signalHandle.ClearPrediction(TickSync.MinPredictionTick, confirmedServerTick);
 			}
 
+			// TODO: Increase prediction lead in case of local misprediction.
 			TickSync.UpdateMinPredictionTick(nextTick);
 		}
 
