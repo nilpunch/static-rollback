@@ -12,13 +12,13 @@ namespace Shenanicode.Rollback {
 				_connection = connection;
 			}
 
-			public void OnInputPredicted<T>(int tick, ushort channel) {
-				var writer = MessageSerializer<TSessionType>.CreateClientInput(Session<TSessionType>.GetInputHandle(typeof(T)), tick, channel);
+			public void OnInputPredicted<T>(int tick, ushort channel) where T : unmanaged, IInput {
+				var writer = MessageSerializer<TSessionType>.CreateClientInput(Session<TSessionType>.Inputs<T>.Handle, tick, channel);
 				_connection.WriteOutgoingUnorderedMessage(writer);
 			}
 
-			public void OnSignalPredicted<T>(int tick, ushort channel, byte localOrder) {
-				var writer = MessageSerializer<TSessionType>.CreateClientSignal(Session<TSessionType>.GetSignalHandle(typeof(T)), tick, channel, localOrder);
+			public void OnSignalPredicted<T>(int tick, ushort channel, byte localOrder) where T : struct, ISignal {
+				var writer = MessageSerializer<TSessionType>.CreateClientSignal(Session<TSessionType>.Signals<T>.Handle, tick, channel, localOrder);
 				_connection.WriteOutgoingUnorderedMessage(writer);
 			}
 		}
@@ -258,6 +258,7 @@ namespace Shenanicode.Rollback {
 			MessageSerializer<TSessionType>.ReadFullSyncInputs(serverTick, ref reader);
 
 			Session<TSessionType>.SaveFrame();
+			Session<TSessionType>.SaveInterpolationState();
 			TickSync.HardReset(serverTick + 1);
 			UnorderedMessagesTracker.HardReset(serverTick + 1);
 			LastPingTime = -1;

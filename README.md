@@ -16,7 +16,7 @@ The library has a dependency on [StaticPack](https://github.com/Felid-Force-Stud
 // Define session type.
 public struct SessionType : ISessionType { }
 
-// Define type-alias for convenient access.
+// Type alias for convenient access.
 public abstract class S : Session<SessionType> { }
 
 // Define inputs.
@@ -31,25 +31,20 @@ public struct UseItem : ISignal {
 	public int ItemId;
 }
 
-public class SimulationRollback : IRollback {
-	public int CanRollbackFrames { get; }
-	public void SaveFrame() { }
-	public void Rollback(int frames) { }
-}
-
 public class SimulationUpdateRoot : IUpdateRoot {
 	public void Update(int tick) {
-		// High-level calls for systems, etc.
+		// High-level simulation logic, systems, etc.
 		// ...
 
 		var input = S.GetInput<PlayerInput>(channel: 0);
-		if (input.LastFreshInput.Left) {
-			// Decrease movement based on how old input is.
+		if (input.LastFresh().Left) {
+			// Move character to left.
+			// Scale movement based on input age.
 			var moveModifier = 1f - input.TicksPassed / 10f;
 		}
 
 		foreach (var (channel, data) in S.GetAllSignals<UseItem>()) {
-			// Find character with this input channel and apply action.
+			// Find the character for this channel and apply the action.
 			var item = data.ItemId;
 		}
 	}
@@ -63,8 +58,8 @@ S.Create(SimulationType.AutomaticRollbacks,
 		framesCapacity: 26));
 
 // Register simulation entry points.
-S.AddUpdateRoot(new SimulationUpdateRoot());
-S.AddRollback(new SimulationRollback());
+S.SetUpdateRoot(new SimulationUpdateRoot());
+S.SetRollback(new SimulationRollback());
 
 // Auto-register all inputs and signals from the calling assembly.
 S.Types().RegisterAll();

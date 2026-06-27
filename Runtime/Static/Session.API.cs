@@ -6,9 +6,9 @@ namespace Shenanicode.Rollback {
 	public interface ISessionType { }
 
 	public interface IPredictionReceiver {
-		void OnInputPredicted<T>(int tick, ushort channel);
+		void OnInputPredicted<T>(int tick, ushort channel) where T : unmanaged, IInput;
 
-		void OnSignalPredicted<T>(int tick, ushort channel, byte localOrder);
+		void OnSignalPredicted<T>(int tick, ushort channel, byte localOrder) where T : struct, ISignal;
 	}
 
 	public interface IUpdateRoot {
@@ -173,6 +173,12 @@ namespace Shenanicode.Rollback {
 		public static void SaveFrame() {
 			AssertSessionIsInitialized();
 			Data.Instance.Rollback.SaveFrame();
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void SaveInterpolationState() {
+			AssertSessionIsInitialized();
+			Data.Instance.InterpolationReceiver.SaveInterpolationState();
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
